@@ -1,0 +1,26 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "This is Backend Part of admin Panel :",
+  "keywords": [
+    "Fullstack",
+    "Admin",
+    "Panel"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "iamdeepak199"
+  },
+  "license": "ISC",
+  "author": "Deepak Bhardwaj",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "express": "^5.1.0",
+    "nodemon": "^3.1.11"
+  }
+}
