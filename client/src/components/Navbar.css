@@ -1,0 +1,83 @@
+/* ===== NAVBAR GLOBAL RESET ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+header {
+  width: 100%;
+  background: #1d1d1d;
+  padding: 15px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: auto;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ===== LOGO ===== */
+.logo-brand a {
+  color: #fff;
+  font-size: 26px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* ===== NAVBAR MENU ===== */
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+}
+
+nav ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 18px;
+  transition: 0.3s;
+  padding-bottom: 4px;
+}
+
+/* ===== HOVER EFFECT ===== */
+nav ul li a:hover {
+  color: #00d4ff;
+}
+
+/* ===== ACTIVE LINK (NavLink auto adds class="active") ===== */
+nav ul li a.active {
+  color: #00d4ff;
+  border-bottom: 2px solid #00d4ff;
+}
+
+/* ===== RESPONSIVE NAVBAR ===== */
+@media (max-width: 768px) {
+  nav ul {
+    gap: 15px;
+  }
+  
+  nav ul li a {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  nav ul {
+    flex-direction: column;
+    align-items: center;
+  }
+}

@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const db = require('../config/Database');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+dotenv.config();
+
+const SECRET_KEY = process.env.JWT; 
 
 const home = (req, res) => {
   try {
@@ -11,46 +16,45 @@ const home = (req, res) => {
   }
 };
 
+// ===========================
+// REGISTER WITH JWT
+// ===========================
 const register = (req, res) => {
   try {
-    const { username, email, phone, password,isadmin } = req.body;
+    const { username, email, phone, password, isadmin } = req.body;
 
-    // 1. Check if email already exists
     const checkEmailQuery = "SELECT * FROM users WHERE email = ?";
     db.query(checkEmailQuery, [email], (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Server Error");
-      }
+      if (err) return res.status(500).send("Server Error");
 
       if (result.length > 0) {
-        // Email already exists
         return res.status(400).send("User already exists");
       }
 
-      // 2. Hash password BEFORE inserting
       const saltRounds = 10;
-
       bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).send("Error hashing password");
-        }
+        if (err) return res.status(500).send("Error hashing password");
 
-        // 3. Insert new user with hashed password
         const insertQuery =
-          "INSERT INTO users (username, email, phone, password,isadmin) VALUES (?, ?, ?, ?, ?)";
+          "INSERT INTO users (username, email, phone, password, isadmin) VALUES (?, ?, ?, ?, ?)";
 
-        db.query(
-          insertQuery,
-          [username, email, phone, hashedPassword,isadmin],
-          (err2, result2) => {
-            if (err2) {
-              console.error(err2);
-              return res.status(500).send("Server Error");
-            }
+        db.query(insertQuery, [username, email, phone, hashedPassword, isadmin],
+          (err2) => {
+            if (err2) return res.status(500).send("Server Error");
 
-            return res.status(200).send("User registered successfully");
+            // ===========================
+            // CREATE JWT TOKEN
+            // ===========================
+            const token = jwt.sign(
+              { email, username, isadmin },
+              SECRET_KEY,
+              { expiresIn: "1h" }
+            );
+
+            return res.status(200).json({
+              message: "User registered successfully",
+              token: token
+            });
           }
         );
       });
@@ -61,5 +65,89 @@ const register = (req, res) => {
   }
 };
 
+// ===========================
+// JWT AUTH MIDDLEWARE
+// ===========================
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
 
-module.exports = { home, register };
+  if (!authHeader) return res.status(401).json({ message: "No token provided" });
+
+  const token = authHeader.split(" ")[1]; // "Bearer token"
+
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.status(403).json({ message: "Invalid token" });
+
+    req.user = user; // store decoded data
+    next();
+  });
+};
+
+// ===========================
+// PROTECTED ROUTE EXAMPLE
+// ===========================
+const dashboard = (req, res) => {
+  res.json({
+    message: "Welcome to Dashboard",
+    user: req.user
+  });
+};
+
+// ===========================
+// LOGIN WITH JWT
+// ===========================
+const login = (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email & Password required" });
+    }
+
+    const checkUserQuery = "SELECT * FROM users WHERE email = ?";
+    db.query(checkUserQuery, [email], (err, result) => {
+      if (err) return res.status(500).json({ message: "Server Error" });
+
+      if (result.length === 0) {
+        return res.status(400).json({ message: "User not found" });
+      }
+
+      const user = result[0];
+
+      bcrypt.compare(password, user.password, (err, isMatch) => {
+        if (err) return res.status(500).json({ message: "Error checking password" });
+
+        if (!isMatch) {
+          return res.status(401).json({ message: "Invalid password" });
+        }
+
+        const token = jwt.sign(
+          {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            isadmin: user.isadmin
+          },
+          SECRET_KEY,
+          { expiresIn: "1h" }
+        );
+
+        return res.status(200).json({
+          message: "Login successful",
+          token: token,
+          redirect: "/dashboard"  // ⭐ Frontend should redirect user here
+        });
+
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server Error");
+  }
+};
+
+// const contact = (res,req) =>{
+
+// }
+
+module.exports = { home, register, verifyToken, dashboard,login};
